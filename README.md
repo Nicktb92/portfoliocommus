@@ -1,5 +1,5 @@
 #### Student: Nick ten Broeke
-#### Student number: 11912219
+#### Stud. number: 11912219
 
 ### Choice of Corpus
 
