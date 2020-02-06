@@ -1,3 +1,6 @@
+#### Student: Nick ten Broeke
+#### Student number: 11912219
+
 ### Choice of Corpus
 
 The corpus that I have chosen is one of my personally curated playlists, consisting of 406 songs. This particular playlist, called “SN”, is similarly compiled as many of Spotify’s curated playlisted in the sense that it’s not compiled based on genre but rather on a specific mood. Its intention is to be listened to when hanging out, or having dinner with friends. Specifically, I would like to know how the style of this particular playlist has evolved over the years. Did I have different ideas on what fitted the playlist two years ago as opposed to now?
@@ -12,7 +15,7 @@ Comparisons of the audio features were made between SN-new and SN-old. Overall, 
 
 The sharpest increase of a feature was found in instrumentalness (SN-old: *M = 0.35, sd = 0.34*; SN-new: *M = 0.58, sd = 0.32*). However, the high dispersion of this feature introduces some uncertainty in how meaningful this increase truly is. 
 
-One noteworthy outlier is the song “When the Saints Go Marching In” by Don Shirley which has z-values larger than |1.5| for the danceability, valence and energy features. Listening to the song reveals why this song is such an outlier as it is a slow and melancholic piano song, which is not very typical of this overall more upbeat playlist. 
+One noteworthy outlier is the song “When the Saints Go Marching In” by Don Shirley which has z-values larger than an absolute value of 1.5 for the danceability, valence and energy features. Listening to the song reveals why this song is such an outlier as it is a slow and melancholic piano song, which is not very typical of this overall more upbeat playlist. 
 
-Another atypical song in the playlist is the 1997 remastered Talk Talk song “the Rainbow”. This theatrical slow-burner also scores z-values larger than |1.5| on the danceability, valence and energy features. Again, I very much agree with the Spotify algorithms that this can be considered an atypical song.  
+Another atypical song in the playlist is the 1997 remastered Talk Talk song “the Rainbow”. This theatrical slow-burner also scores z-values larger than absolute value 1.5 on the danceability, valence and energy features. Again, I very much agree with the Spotify algorithms that this can be considered an atypical song.  
 
