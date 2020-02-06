@@ -14,5 +14,5 @@ The sharpest increase of a feature was found in instrumentalness (SN-old: *M = 0
 
 One noteworthy outlier is the song “When the Saints Go Marching In” by Don Shirley which has z-values larger than |1.5| for the danceability, valence and energy features. Listening to the song reveals why this song is such an outlier as it is a slow and melancholic piano song, which is not very typical of this overall more upbeat playlist. 
 
-Another atypical song in the playlist is the 1997 remastered Talk Talk song “the Rainbow”. This theatrical slow-burner also scores z-values larger than |1.5| on the danceability, valence and energy features. Again, I very much agree with the Spotify algorithms that this can be considered an atypical song. The identification of these outliers gives a hint about the essence of this playlist, suggesting 
+Another atypical song in the playlist is the 1997 remastered Talk Talk song “the Rainbow”. This theatrical slow-burner also scores z-values larger than |1.5| on the danceability, valence and energy features. Again, I very much agree with the Spotify algorithms that this can be considered an atypical song.  
 
