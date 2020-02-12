@@ -19,6 +19,8 @@ One noteworthy outlier is the song “When the Saints Go Marching In” by Don S
 
 Another atypical song in the playlist is the 1997 remastered Talk Talk song “the Rainbow”. This theatrical slow-burner also scores z-values larger than absolute value 1.5 on the danceability, valence and energy features. Again, I very much agree with the Spotify algorithms that this can be considered an atypical song.  
 
-# What's going on
+# Werkt het 
+
+HalloGalloghgjhghmnb
 
 
