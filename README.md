@@ -26,7 +26,7 @@ The plot also shows something rather unexpected: the representation of minor/maj
 
 ***
 
-![](Density.png)
+![]("Density.png")
 
 ***
 
