@@ -13,7 +13,7 @@ Before I'll look at any visualizations it is important to determine which featur
 
 ***
 
-![](Mean Change.png)
+![](MeanChange.png)
 
 The graph suggests that over time the playlist has become more upbeat as the danceability and valence features have increased over time when comparing SN old with SN new. Only comparing the means however gives little inside how the distribution of these features have developed. 
 
