@@ -1,0 +1,37 @@
+---
+title: "Portfolio - Computational Musicology"
+author: "Nick ten Broeke (11912219)"
+date: "2/19/2020"
+output: 
+  flexdashboard::flex_dashboard:
+  storyboard: true
+  theme: flatly
+---
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(spotifyr)
+library(Cairo)
+source('Spotify.R')
+```
+
+### Introduction
+
+Blablabla
+
+***
+
+Toelichting!!!
+
+### Plot time
+
+plot <- Plot code
+
+ggplotly(plot)
+
+***
+
+Toelichting
+
+
