@@ -104,9 +104,9 @@ This portfolio tells the story of what I've found.
 
 ***
 
-To tell this story we need to be able to compare the old with the new. As such, I've split up SN into two parts: the first 100 songs added to the playlist (SN old) and the latest 100 additions (SN new). The graph on the left shows if there are meaningful differences between the means of a selection of Spotify audio features of SN old and SN new. Red lines indicate strong effects (> 0.5 standard deviations of change) whereas orange lines indicate medium effects (> 0.2 - < 0.5 standard deviations of change).
+First, we need to be able to compare the old with the new. As such, I've split up SN into two parts: the first 100 songs added to the playlist (SN old) and the latest 100 additions (SN new). The graph on the left shows if there are meaningful differences between the means of a selection of Spotify audio features of SN old and SN new. Red lines indicate strong effects (> 0.5 standard deviations of change) whereas orange lines indicate medium effects (> 0.2 - < 0.5 standard deviations of change).
 
-The graph seems to show that our music taste has become happier over time: danceability has gone up and valence has experienced a sharp rise. Only looking at a difference in means, however, tells us nothing of how the distribution of these features has evolved over time...
+The graph seems to show that our music taste has become happier over time: danceability has gone up and valence has experienced a sharp rise. Only looking at a difference in means, however, tells us nothing of how the distributions of these features have evolved over time...
 
 
 ### The Great Migration of the Density Blob
