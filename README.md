@@ -32,7 +32,7 @@ The plot also shows something rather unexpected: the representation of minor/maj
 
 ### Constancy
 
-One possibility as a cause for the above shift in distribution is the influence of newly released music. Possibly the shift in playlist sound has less to do with a change in myself but rather has something to do with what kind of music is being released. The plot below shows that this is probably not the case. The date that songs were added are plotted against the time that they were released to see if there is a relationship between these two variables. The plot shows that over the course of having the playlist I wasn't influenced much by what was being released, nor by what was popular at any given time.
+One possibility as a cause for the above shift in distribution is the influence of newly released music. Possibly the shift in playlist sound has less to do with a change in me and my girlfriend but rather has something to do with what is the latest and greatest music that's being released at any given time. The plot below shows that this is probably not the case. The date that songs were added are plotted against the time that they were released to see if there is a relationship between these two variables. To further underline this, I plotted a regression line which turned out almost completely flat. The plot further shows the distribution of the popularity of the tracks added over time, there seems to be a little bit of an overrepresentation of popular songs towards the latest additions but overall there seems to be a roughly equal distribution of popular/unpopular songs at any point in time.
 
 ***
 

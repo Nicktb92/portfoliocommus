@@ -78,22 +78,22 @@ CompMatMeans.graph <- CompMatMeans.graph %>%
 library(CGPfunctions)
 
 CompMatMeans.graph <- CompMatMeans.graph %>%
-                                mutate(features = c(rep("1. SN old", 7), rep("2. SN new", 7)))
+  mutate(features = c(rep("1. SN old", 7), rep("2. SN new", 7)))
 
 graph <- newggslopegraph(CompMatMeans.graph, 
                          features, 
                          Value, 
                          Feature, 
-                         LineColor = c("danceability" = "#ff9a00", "energy" = "#ff9a00",
-                                       "speechiness" = "grey", "acousticness" = "#ff9a00",
-                                       "instrumentalness" = "#ea0909", "liveness" = "grey", 
-                                       "valence" = "#ea0909"),
+                         LineColor = c("danceability" = "#FEE08B", "energy" = "#FEE08B",
+                                       "speechiness" = "grey", "acousticness" = "#FEE08B",
+                                       "instrumentalness" = "#D53E4F", "liveness" = "grey", 
+                                       "valence" = "#D53E4F"),
                          LineThickness = 0.5) +
-    labs(title="Audio Features", 
-         subtitle="Change of Means", 
-         caption="Red: > 0.5 Standard Deviation\nOrange: 0.2 - 0.5 Standard Deviation\nGrey: < 0.2 Standard Deviation", x = NULL) +
-    theme_minimal()
-    
+  labs(title="Audio Features", 
+       subtitle="Change of Means", 
+       caption="Red: > 0.5 Standard Deviation\nYellow: 0.2 - 0.5 Standard Deviation\nGrey: < 0.2 Standard Deviation", x = NULL) +
+  theme_minimal()
+
 
 graph <- graph + theme(legend.position = "none", plot.title = element_text(hjust = 0.5), plot.subtitle = element_text(hjust = 0.5)) 
 
@@ -115,9 +115,9 @@ SNfull <- subset(SNfull, select = c(danceability, energy, key, loudness, mode, s
 SNfull <- SNfull %>%
     mutate(group = rep(NA, nrow(SNfull)))
            
-SNfull$group[306:406] <- rep("SNnew", 100)
-SNfull$group[1:100] <- rep("SNold", 100)
-SNfull$group[101:305] <- rep(NA, 100)
+SNfull$group[306:406] <- rep("C.SNnew", 100)
+SNfull$group[1:100] <- rep("A.SNold", 100)
+SNfull$group[150:250] <- rep("B.SNmid", 100)
 SNfull$id <- seq(1, nrow(SNfull), by = 1)
 SNfull <- SNfull[!SNfull$added_by.id == "danielacutt",]
 
@@ -126,22 +126,35 @@ SNfull$group <- factor(SNfull$group)
 library(reshape2)
 
 SN_long <- melt(SNfull, id.vars = c("track.name", "added_at", "added_by.id", "track.duration_ms", "track.album.name", "track.album.release_date", "group", "id", "Month", "YearN", "key_name", "key_mode", "track.popularity", "mode", "key", "loudness", "tempo", "time_signature", "MonthN", "mode_name", "danceability", "valence", "instrumentalness", "acousticness", "energy", "loudness"))
+
+
+SNz <- SNfull
+SNz[,1:11] <- scale(SNz[,1:11])
+SNz <- SNz[, c(-3, -5, -11)]
+
+bigz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > 1.5 | apply(SNz[, c(1, 2, 8)], 1, mean) < -1.5 )
+smallz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > -0.01 & apply(SNz[, c(1, 2, 8)], 1, mean) < 0.01 )
+
+SNz[smallz, "track.name"]
+SNz[bigz, "track.name"]
 ```
 
 # Plotting
 
 ```{r}
-SN_group <- SN_long[c(1:100, 306:406),]
-
-par(mfrow = c(2,2))
-
 colnames(SN_group) <- make.unique(names(SN_group))
 
-plot2 <- na.omit(SN_group) %>%
+SlomoOutlier <- scale(Filter(is.numeric, SNfull))
+
+labels <- c(A.SNold = "SN old\nThe First 100 Songs Added", 
+            B.SNmid = "SN mid\nSongs In Between Old and New",
+            C.SNnew = "SN new\nThe Last 100 Songs Added")
+
+plot2 <- na.omit(SNfull) %>%
   ggplot(aes(x = danceability, y = valence)) +
-  facet_grid(rows = vars(group)) +
+  facet_grid(~ group, labeller=labeller(group = labels)) +
   stat_density2d(aes(fill = ..density..), contour = F, geom = 'tile') +
-  geom_rug(colour = "#88419D") +
+  # geom_rug(colour = "#88419D") +
   scale_fill_distiller(palette = 'BuPu') +
   geom_point(alpha = 0.9, aes(col = mode_name), size = .8) +
   theme_minimal() +
@@ -162,58 +175,20 @@ plot2 <- na.omit(SN_group) %>%
   guides(color=guide_legend(override.aes=list(fill="#88419D"))) +
   xlab("Danceability") +
   ylab("Valence") +
-  labs(title = "Density Plot", subtitle = "Development of Playlist over Time", colour = "Key Mode") 
+  labs(title = "Happier Songs over Time?", subtitle = "Shows Highest Density of Valence and Danceability at Different Points in Time", colour = "Key Mode") 
 
 plot2
 ```
   
-  
 ```{r}
-install.packages("dygraphs")
-library(dygraphs)
-dygraph(SN_long, main = "New Haven Temperatures") %>% 
-  dyRangeSelector(dateWindow = c("1920-01-01", "1960-01-01"))
-```
 
-
-```{r, eval = F}
-#################
-
-na.omit(SN_group) %>%
-  ggplot(aes(x = loudness, y = track.popularity)) +
-  facet_grid(rows = vars(group)) +
-  stat_density2d(aes(fill = ..density..), contour = F, geom = 'tile') +
-  scale_fill_distiller(palette = 'BuPu') +
-  geom_point(alpha = 0.9, aes(col = mode_name)) +
-  theme_minimal() +
-      scale_colour_brewer(         # Use the Color Brewer to choose a palette.
-        type = "diverging",           # Qualitative set.
-        palette = "Spectral"       # Name of the palette is 'Paired'.
-    ) +
-    scale_x_continuous(          # Fine-tune the x axis.
-        limits = c(-30, 0),
-        breaks = c(-30, -15, 0),  # Use grid-lines for quadrants only.
-        minor_breaks = NULL      # Remove 'minor' grid-lines.
-    ) +
-    scale_y_continuous(          # Fine-tune the y axis in the same way.
-        limits = c(0, 100),
-        breaks = c(0, 50, 100),
-        minor_breaks = NULL
-    ) +
-  xlab("Energy") +
-  ylab("Track Popularity") +
-  labs(title = "Density Plot", subtitle = "Development of Music Taste over Time", colour = "Key Mode") 
-
-```
-
-```{r}
 SNfull$track.album.release_date <- as.Date(SNfull$track.album.release_date)
 
 plot1 <- SNfull %>%
   ggplot(aes(x = added_at, y = track.album.release_date, fill = track.popularity)) +
-  geom_smooth(col = "#88419D") +
+  geom_abline(col = "#88419D") +
   scale_fill_distiller(palette = 'BuPu') +
-  geom_point(alpha = 0.8, shape = 21) +
+  geom_point(alpha = 0.7, shape = 21, size = 1.2) +
   theme_minimal() +
       scale_colour_brewer(         # Use the Color Brewer to choose a palette.
         type = "diverging",           # Qualitative set.
@@ -224,14 +199,9 @@ plot1 <- SNfull %>%
   labs(title = "What Has Stayed Constant?", subtitle = "Relationship Newly Released Music and Playlist Development", fill = "Track Popularity")
 
 plot1
+
 ```
 
-
-
-```{r}
-library(gridExtra)
-library(cowplot)
-```
 
 ```{r}
 library(tidyverse)
@@ -343,7 +313,7 @@ ggplot(try, aes(y = value, x = as.Date(added_at), col = as.factor(feature))) +
 # Mean Convergence
 
 ```{r}
-# SNfull <- SNfull[-137,]
+# SNfull <- SNfull[-138,]
 
 SNnick <- SNfull %>%
   filter(added_by.id == "1124085647")
@@ -430,14 +400,8 @@ ggplot(SNcomp_long, aes(y = value,
 ```
 
 
-```{r}
-ggplot(monthdivision[1:10,], aes(y = abs(valencediff), x = as.Date(Group.1))) +
-  geom_area(col = "#88419D", fill = "#88419D", alpha = 0.6) +
-  scale_colour_brewer(palette = "BuPu") +
-  stat_smooth(method = "lm", se = F) +
-  ylim(0,0.3)
 
-```
+
 
 
 
