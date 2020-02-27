@@ -14,6 +14,7 @@ library(tidyverse)
 library(plotly)
 library(spotifyr)
 library(compmus)
+library(gridExtra)
 source('Spotify.R')
 ```
 
@@ -68,6 +69,226 @@ CompMatMeans.graph <- CompMatMeans.graph %>%
     mutate(Feature = featn)
 ```
 
+### Again and Again: Is SN charachterized by Repetitive Music?
+
+```{r}
+rainbow <- 
+    get_tidy_audio_analysis('4k2CdsRopiwCKqO6rOSiVY') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+
+# ---------------
+
+cherryblossom <- 
+    get_tidy_audio_analysis('3OzFq5rnNeXtu4VCOBPToz') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+
+# ---------------
+
+farewell <- 
+    get_tidy_audio_analysis('5iIQrjwy4bo3TfRVbgtl1H') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+```
+
+```{r}
+
+slowly <- 
+    get_tidy_audio_analysis('5SiPjxWdMUFWoLslvvC5v5') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+
+# ---------------
+
+thechain <- 
+    get_tidy_audio_analysis('7IctzNEJucIBzkAWYg6np2') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+
+# ---------------
+
+dontyou <- 
+    get_tidy_audio_analysis('64ka8E2PpNo4NxSCiRBj1H') %>% 
+    compmus_align(bars, segments) %>% 
+    select(bars) %>% unnest(bars) %>% 
+    mutate(
+        pitches = 
+            map(segments, 
+                compmus_summarise, pitches, 
+                method = 'rms', norm = 'euclidean')) %>% 
+    mutate(
+        timbre = 
+            map(segments, 
+                compmus_summarise, timbre, 
+                method = 'mean'))
+```
+
+
+```{r}
+rainbow.p <- rainbow %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = 'High Average Z-Value', title = 'the Rainbow') 
+
+# -----------------
+
+cherryblossom.p <- cherryblossom %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = '', title = 'Cherry Blossom')
+
+# -----------------
+
+farewell.p <- farewell %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = '', title = "Farewell")
+```
+
+```{r}
+slowly.p <- slowly %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = 'Low Average Z-Value', title ="Slowly")
+
+# -----------------
+
+thechain.p <- thechain %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = '', title = 'The Chain')
+
+# -----------------
+
+dontyou.p <- dontyou %>% 
+    compmus_self_similarity(timbre, 'cosine') %>% 
+        ggplot(
+        aes(
+            x = xstart + xduration / 2, 
+            width = xduration,
+            y = ystart + yduration / 2,
+            height = yduration,
+            fill = d)) + 
+    geom_tile() +
+    coord_fixed() +
+    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    theme_classic() +
+    labs(x = '', y = '', title = 'Why Dont You')
+```
+
+```{r}
+grid.arrange(rainbow.p, cherryblossom.p, farewell.p, slowly.p, thechain.p, dontyou.p, nrow = 2, ncol = 3)
+```
+
+***
+
+The chromagrams of last week suggested that a typical SN song is more repetitive than an atypical song (measured by average z-value of danceability, valence and energy features). To further inspect this hypothesis, I plotted self similarity matrices (SSM) for three atypical songs (z-value >|1.5|) and three typical songs (z-value <|.01|). The SSM's plot timbre features for all songs, which were normalized via the Euclidean method. Although timbre features are not typically normalized, the Euclidean normalization yielded more pronounced visualizations. To summarize these features, a normal arithmetic mean was used and cosine distances were calculated to determine similarity. 
+
+As can be seen from the plots, the atypical songs seem to have more dynamic structures, shown by the complex checkered patterns that characterize these plots. However, the song *the Farewell* is less pronounced in this respect. In contrast, the typical songs overall seem to have fairly repetitive structures, though *Why Don't You* is again an exception to this pattern.
+
+All in all, there seems to be some support for the idea that SN is characterized by repetitive music but this is rather a tendency than a rule as the SSM's show less of a stark difference than might be expected.
+
 ### Music Taste over Time: the Story of a Playlist
 
 ```{r}
@@ -109,7 +330,7 @@ First, we need to be able to compare the old with the new. As such, I've split u
 The graph seems to show that our music taste has become happier over time: danceability has gone up and valence has experienced a sharp rise. Only looking at a difference in means, however, tells us nothing of how the distributions of these features have evolved over time...
 
 
-### The Great Migration of the Density Blob
+### Happier Songs Over Time: The Great Migration of the Density Blob
 
 ```{r}
 SNfull$added_at <- as.Date(SNfull$added_at)
@@ -180,7 +401,7 @@ The strongest shift can be seen in the valence feature: whereas the majority of 
 
 What might have caused this shift in sound?
 
-### Forever Hipster
+### Forever Hipster: Were we Influenced by Newly Released Music?
 
 ```{r, fig.width = 7}
 
@@ -319,8 +540,8 @@ SNz <- SNz[, c(-3, -5, -11)]
 bigz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > 1.5 | apply(SNz[, c(1, 2, 8)], 1, mean) < -1.5 )
 smallz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > -0.01 & apply(SNz[, c(1, 2, 8)], 1, mean) < 0.01 )
 
-# SNz[smallz, "track.name"]
-# SNz[bigz, "track.name"]
+SNz[smallz, "track.name"]
+SNz[bigz, "track.name"]
 ```
 
 ```{r}

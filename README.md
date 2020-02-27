@@ -21,8 +21,11 @@ The graph suggests that over time the playlist has become more upbeat as the dan
 
 ### Changes over Time
 
-Below is a plot that shows how the distribution of the danceability and valence features has shifted over time. The strongest shift can be seen in the valence feature. Whereas the majority of songs added in the beginning of the playlist are categorized as sad, with valences centering between 0.1-0.4, the latest songs added show virtually no focus at this region and include songs that explore the upper end of the continuum. Danceability too, has made a shift, albeit less strong than the valence feature. 
-The plot also shows something rather unexpected: the representation of minor/major songs seems virtually unchanged between SN old and SN new, in spite of the clear rise in 'happy' songs. Clearly I need to uncover more about how the sound of SN has evolved over the years, which I will do in coming weeks.
+On the left is a plot that shows how the distribution of the danceability and valence features has shifted over time. The first panel represents SN old (first 100 songs) and the last panel SN old (last 100 songs). To further show how the density of songs on these two dimensions has moved over time, I added a mid panel which I called SN mid, representing a 100 songs that were added in between SN old and new.
+
+The strongest shift can be seen in the valence feature: whereas the majority of songs added in the beginning of the playlist are categorized as sad, with valences centering between 0.1-0.4, the latest songs added show virtually no focus at this region and include songs that explore the upper end of the continuum. Danceability too, has made a shift, albeit less strong than the valence feature. 
+
+What might have caused this shift in sound?
 
 ***
 
