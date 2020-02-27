@@ -540,8 +540,8 @@ SNz <- SNz[, c(-3, -5, -11)]
 bigz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > 1.5 | apply(SNz[, c(1, 2, 8)], 1, mean) < -1.5 )
 smallz <- which( apply(SNz[, c(1, 2, 8)], 1, mean) > -0.01 & apply(SNz[, c(1, 2, 8)], 1, mean) < 0.01 )
 
-SNz[smallz, "track.name"]
-SNz[bigz, "track.name"]
+# SNz[smallz, "track.name"]
+# SNz[bigz, "track.name"]
 ```
 
 ```{r}
