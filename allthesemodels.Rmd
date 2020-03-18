@@ -1,0 +1,117 @@
+---
+title: "Modelsss"
+author: "Nick ten Broeke (11912219)"
+date: "3/17/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(spotifyr)
+library(compmus)
+source('spotify.R')
+library(reshape2)
+library(caret)
+```
+
+```{r}
+SNfull_num <- Filter(is.numeric, SNfull)
+SNfull_num <- SNfull_num[,-c(18:50)]
+SNfull_num <- SNfull_num[,-c(18:50)]
+
+NI <- c("mode", "time_signature", "track.duration_ms", "track.track_number", "track.album.total_tracks", "track.disc_number")
+SNfull_num <- select(SNfull_num, -c(NI))
+
+# Make group column 
+SNfull_num <- mutate(SNfull_num, group = 1)
+SNfull_num[309:409,"group"] <- 2
+SNfull_num <- SNfull_num[c(1:100, 309:409),]
+SNfull_num[,11] <- (SNfull_num[,11] - min(SNfull_num[,11])) / (max(SNfull_num[,11]) - min(SNfull_num[,11]))
+
+# Make train and test set
+index <- sample(nrow(SNfull_num), 0.70 * nrow(SNfull_num))
+SNfull_train <- SNfull_num[index,]
+SNfull_test <- SNfull_num[-index,]
+```
+
+```{r}
+# Normalize track.popularity
+train.control <- trainControl(method = "repeatedcv",
+                              number = 10,
+                              repeats = 3,
+                              search = "random")
+
+model_caret   <- train(factor(group) ~ energy + instrumentalness + liveness + valence + danceability + track.popularity, 
+                  data = SNfull_train,
+                  method = "plr", metric = "Accuracy",
+                  trControl = train.control)
+
+predictions <- predict(model_caret, newdata = SNfull_test)
+
+confusion <- confusionMatrix(predictions, factor(SNfull_test$group))
+confusion
+# knitr::kable(confusion$table)
+```
+
+```{r}
+SNfull_test <- mutate(SNfull_test, prediction = predictions)
+
+real <- aggregate(SNfull_num, list(SNfull_num$group), mean)
+modelpred <- aggregate(SNfull_test, list(SNfull_test$prediction), mean)
+
+select <- c("Group.1", "energy", "instrumentalness", "liveness", "valence", "danceability", "track.popularity")
+
+real <- real[, select]
+modelpred <- modelpred[, select]
+
+real <- mutate(real, type = "actual")
+modelpred <- mutate(modelpred, type = "model")
+
+realmod <- rbind(real, modelpred)
+
+realmod <- melt(realmod, id.vars = c("Group.1", "type"))
+realmod$Group.1 <- factor(realmod$Group.1)
+levels(realmod$Group.1) <- c("SN old", "SN new")
+
+# reallong <- melt(real, id.vars = c("Group.1"))
+# modellong <- melt(modelpred, id.vars = "Group.1")
+
+ggplot(realmod, aes(x = variable, y = value, fill = factor(type))) +
+  geom_bar(stat="identity", position = position_dodge(width = 0.5)) +
+  facet_wrap(~ Group.1) +
+  labs(title = "Model Evaluation", subtitle = "How well did the model reproduce the   actual mean values?", fill = "Means") +
+  xlab("") +
+  ylab("value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust = 1)) +
+  ylim(0,1) +
+  # scale_fill_viridis_c(option = 'E', guide = 'none') +
+  scale_fill_brewer(palette = 'BuPu') 
+
+```
+
+
+
+```{r}
+SNfull_test <- mutate(SNfull_test, predicted = predictions)
+
+means <- SNfull_test %>%
+  group_by(predicted) %>%
+  summarise_all(mean)
+
+```
+
+
+Logistic regression
+
+```{r}
+log_model <- glm(factor(group) ~ danceability + energy + instrumentalness + liveness + valence + track.popularity, data = SNfull_train, family = "binomial")
+
+logpred <- predict(log_model, newdata = SNfull_test, type = "response")
+logpred <- factor(ifelse(logpred > 0.5, 2, 1))
+
+confusionMatrix(logpred, factor(SNfull_test$group))
+
+```
+
+

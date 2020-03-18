@@ -8,7 +8,6 @@ output:
         theme: flatly
 ---
 
-
 ```{r setup}
 library(tidyverse)
 library(plotly)
@@ -18,6 +17,8 @@ library(gridExtra)
 library(RColorBrewer)
 source('Spotify.R')
 library(grid)
+library(caret)
+library(reshape2)
 ```
 
 ```{r}
@@ -71,141 +72,91 @@ CompMatMeans.graph <- CompMatMeans.graph %>%
     mutate(Feature = featn)
 ```
 
-### (NEW) Is SN Characterized by Repetitive Music? Part 2: Tempograms
+### (NEW) Can a Computer Differentiate Between Old and New?
 
 ```{r}
-slowly <- 
-    get_tidy_audio_analysis('5SiPjxWdMUFWoLslvvC5v5') 
-thechain <- 
-    get_tidy_audio_analysis('7IctzNEJucIBzkAWYg6np2')
-dontyou <- 
-    get_tidy_audio_analysis('64ka8E2PpNo4NxSCiRBj1H') 
-lydia <- 
-    get_tidy_audio_analysis('1Fs3DEJsYoT1jsK9sNGRaK') 
-macadam <- 
-    get_tidy_audio_analysis('4QfJ0zWoNdObnOgeacNkPL') 
+SNfull_num <- Filter(is.numeric, SNfull)
+# SNfull_num <- SNfull_num[,-c(18:50)]
+# SNfull_num <- SNfull_num[,-c(18:50)]
 
-rainbow <- 
-    get_tidy_audio_analysis('4k2CdsRopiwCKqO6rOSiVY') 
-cherryblossom <- 
-    get_tidy_audio_analysis('3OzFq5rnNeXtu4VCOBPToz') 
-farewell <- 
-    get_tidy_audio_analysis('5iIQrjwy4bo3TfRVbgtl1H')
-contigo <- 
-    get_tidy_audio_analysis('3W3rGvMrat9McSeU5Hf6dZ')
-saints <- 
-    get_tidy_audio_analysis('33ahXRVbidoCGLLiTr3VE1')
+NI <- c("mode", "time_signature", "track.duration_ms", "track.track_number", "track.album.total_tracks", "track.disc_number")
+SNfull_num <- select(SNfull_num, -c(NI))
+
+# Make group column 
+SNfull_num <- mutate(SNfull_num, group = 1)
+SNfull_num[309:409,"group"] <- 2
+SNfull_num <- SNfull_num[c(1:100, 309:409),]
+SNfull_num[,11] <- (SNfull_num[,11] - min(SNfull_num[,11])) / (max(SNfull_num[,11]) - min(SNfull_num[,11]))
+
+# Make train and test set
+index <- sample(nrow(SNfull_num), 0.70 * nrow(SNfull_num))
+SNfull_train <- SNfull_num[index,]
+SNfull_test <- SNfull_num[-index,]
 ```
 
 ```{r}
-rainbowtemp <- rainbow %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+# Normalize track.popularity
+train.control <- trainControl(method = "repeatedcv",
+                              number = 10,
+                              repeats = 3,
+                              search = "random")
 
-cherrytemp <- cherryblossom %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+model_caret   <- train(factor(group) ~ energy + instrumentalness + liveness + valence + danceability + track.popularity, 
+                  data = SNfull_train,
+                  method = "plr", metric = "Accuracy",
+                  trControl = train.control)
 
-farewelltemp <- farewell %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+predictions <- predict(model_caret, newdata = SNfull_test)
+
+confusion <- confusionMatrix(predictions, factor(SNfull_test$group))
 
 ```
 
 ```{r}
-slowlytemp <- slowly %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+SNfull_test <- mutate(SNfull_test, prediction = predictions)
 
-chaintemp <- thechain %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+real <- aggregate(SNfull_num, list(SNfull_num$group), mean)
+modelpred <- aggregate(SNfull_test, list(SNfull_test$prediction), mean)
 
-dontyoutemp <- dontyou %>% 
-    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
-    ggplot(aes(x = time, y = bpm, fill = power)) + 
-    geom_raster() + 
-    scale_fill_viridis_c(guide = 'none') +
-    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
-    theme_classic()
+select <- c("Group.1", "energy", "instrumentalness", "liveness", "valence", "danceability", "track.popularity")
 
-slowlytemp <- slowlytemp + labs(title = "Slowly")
-chaintemp <- chaintemp + labs(title = "the Chain")
-dontyoutemp <- dontyoutemp + labs(title = "Why Don't You")
+real <- real[, select]
+modelpred <- modelpred[, select]
 
-rainbowtemp <- rainbowtemp + labs(title = "the Rainbow")
-cherrytemp <- cherrytemp + labs(title = "Cherry Blossom")
-farewelltemp <- farewelltemp + labs(title = "Farewell")
-```
+real <- mutate(real, type = "actual")
+modelpred <- mutate(modelpred, type = "model")
 
-```{r}
-grid.arrange(slowlytemp, chaintemp, dontyoutemp, rainbowtemp, cherrytemp, farewelltemp, nrow = 2, ncol = 3)
+realmod <- rbind(real, modelpred)
+
+realmod <- melt(realmod, id.vars = c("Group.1", "type"))
+realmod$Group.1 <- factor(realmod$Group.1)
+levels(realmod$Group.1) <- c("SN old", "SN new")
+
+# reallong <- melt(real, id.vars = c("Group.1"))
+# modellong <- melt(modelpred, id.vars = "Group.1")
+
+modelplot <- ggplot(realmod, aes(x = variable, y = value, fill = factor(type))) +
+  geom_bar(stat="identity", position = position_dodge(width = 0.5)) +
+  facet_wrap(~ Group.1) +
+  labs(title = "Model Evaluation", subtitle = "How well did the model reproduce the actual mean values?", fill = "Means") +
+  xlab("") +
+  ylab("value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust = 1)) +
+  ylim(0,1) +
+  # scale_fill_viridis_c(option = 'E', guide = 'none') +
+  scale_fill_brewer(palette = 'BuPu') 
+
+modelplot
 ```
 
 ***
 
-The self-similarity matrices resulted in non-conclusive results regarding the idea that SN is characterized by more steady and repetitive music and that more dynamic music is more atypical for the playlist. To chase this idea a little further, we can make the same comparisons but this time using tempograms. These objects plot the development of tempo over time for individual songs. On the left the different tempograms are plotted for the same typical and atypical songs as the previous tab. Unfortunately, these plots don't get us much further. The songs *Why Don't You* and *Farewell* again contradict that typical SN songs are more steady and atypical more steady. However, the remaining fours songs do, yet again, support the idea as the tempograms for the typical songs *the Chain* and *Slowly* show a much more steady line than the atypical songs *the Rainbow* and *Cherry Blossom*. 
+To conclude this tour of our playlist and to reach a conclusion whether its style has changed over time, we can try to build a model that attempts to classify songs in SN old or SN new. After all, if a machine is able to 'teach' itself what differentiates old and new tracks in our playlist, then we can add that fact as more evidence that SN's style has changed over time.
 
-### (NEW) This is Getting Repetitive: Is SN Repetitive or Not?
+Because we're dealing with a binary classification task, I decided to train a penalized logistic regression model. To train the model (with 10 fold cross-fold validation using a 70/30 split, repeated 3 times) I used the `R` package `caret`. Via trial and error I eventually used the following predictors, as these resulted in the best model: energy, instrumentalness, liveness, valence, danceability and track popularity. The resulting model did suprisingly well, reaching an overall accuracy of 0.77 (*Kappa: 0.54*). However, the model was trained on less data than is usually necessary when training machine learning algorithms so these numbers might be a bit unreliable. A confusion matrix is printed at the bottom of this text. 
 
-```{r, fig.width = 9}
-typical <- read.csv('typical.csv')
-atypical <- read.csv('atypical.csv')
-
-atypicalplot <- atypical %>%
-  ggplot( aes(x=power, fill = song)) +
-    geom_density(alpha=0.4) +
-    ylim(0,10) +
-    scale_fill_brewer(palette="Dark2") +
-    theme_minimal() + 
-    coord_flip() +
-    scale_x_reverse() +
-    theme(legend.position= c(0.66,0.25)) +
-    theme(axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank()) +
-    labs(subtitle = "Atypical SN Songs", fill = "")
-
-typicalplot <- typical %>%
-  ggplot( aes(x=power, fill = song)) +
-    geom_density(alpha=0.4) +
-    scale_fill_brewer(palette="Dark2") +
-    theme_minimal() +
-    coord_flip() +
-    scale_y_reverse() +
-    scale_x_reverse() +
-    theme(legend.position=c(0.27,0.25)) +
-    labs(subtitle = "Typical SN Songs", fill = "")
-```
-
-```{r}
-grid.arrange(typicalplot, atypicalplot, nrow = 1,
-     top = textGrob("Spread of Power Column",gp=gpar(fontsize=16,font=1)))
-```
-
-***
-
-With the very real risk of getting repetitive myself, I want to give the theory that steady music is typical and dynamic music atypical for SN one more shot. The tempograms of the previous slide are plotted on the basis of power distributions over all the possible bpm's at every point in time of a song. When a tempogram shows a clear and steady tempo we can expect the density plot of this power vector to have lower spread than for a tempogram that shows a lot of fluctuation of tempo over time. As such, I've plotted density curves of this power column for 5 typical and atypical songs (selected again on the basis of the same z-values as before). The "butterfly" plot on the left shows the results. Although there are some exceptions, overall it can be seen that the density plots of atypical songs have a wider spread than those of the typical songs, which show more peaked and narrow density distributions. This suggests that, indeed, SN is characterized by music with a more steady flow. 
+As another measure of how well the model functions is to look how well it managed to reproduce the means in the data. We can look at the songs that the model predicted to be either SN old or SN new, calculate means for each feature within each group and compare those to the actual means of each feature within SN old and SN new. This is plotted on the left. The model managed to discover the same differences between SN old and new as those discussed in this storyboard: over time, we've moved to happier songs that are more danceable and have higher energy.
 
 ### Music Taste over Time: the Story of a Playlist
 
@@ -447,7 +398,7 @@ Could it perhaps be that the difference between SN old and SN new is simply due 
 
 *This plot comes with a caveat: the means represented in SN old are based on much less data than the means of SN new, possibly exaggerating the differences. However, when plotting the mean differences based only on songs from SN new, there is still less of a discrepancy between the means compared to SN old.*
 
-### Chromagram
+### Discovering the Sound of SN via Chromagrams
 
 ```{r}
 SNz <- SNfull
@@ -514,11 +465,13 @@ grid.arrange(chromaslowly, chromarainbow)
 
 ***
 
+Let's take a bit of a sidetour and focus on what is typical of the sound of SN as a whole. A first way of doing this is by looking at the musical information contained in typical and atypical songs of SN. 
+
 On the left two chromagrams are plotted. These objects plot how sound energy is distributed over the classic Western 12 pitch classes at every given timepoint of a recording. A vertical slice of one of these chromagrams is a snapshot in time and shows how much or little energy is present for each note of the 12-note tonescale. These chromagrams were normalized by using the *euclidean* method.
 
 The top chromagram plots a very typical SN song (*Slowly* by *Max Sedgley*), based on the features: danceability, valence and energy. Typicality, here, was determined by finding a song with a very small average *z-value* (<|.01|) for the aforementioned features. The same was done in reverse to find an atypical song: the below chromagram plots a song (*the Rainbow* by *Talk Talk*) with a high average *z-value* (>|1.5|) for these three features.
 
-What stands out from these chromagrams is that *Slowly* is much more repetitive than *the Rainbow*. This makes sense because SN is mostly a playlist intended to enjoy when hanging out with friends and chilled more repetitive music is more suited for this than very dynamic tracks. 
+What stands out from these chromagrams is that *Slowly* is much more repetitive than *the Rainbow*. This would make sense because SN is mostly a playlist intended to enjoy when hanging out with friends and chilled more repetitive music is more suited for this than very dynamic tracks. 
 
 ### Again and Again: Is SN charachterized by Repetitive Music?
 
@@ -638,9 +591,11 @@ rainbow.p <- rainbow %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = 'High Average Z-Value', title = 'the Rainbow') 
+    labs(x = '', y = 'High Average Z-Value', title = 'the Rainbow') +
+    theme(legend.position = "none") 
 
 # -----------------
 
@@ -655,9 +610,11 @@ cherryblossom.p <- cherryblossom %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = '', title = 'Cherry Blossom')
+    labs(x = '', y = '', title = 'Cherry Blossom') +
+    theme(legend.position = "none") 
 
 # -----------------
 
@@ -672,9 +629,11 @@ farewell.p <- farewell %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = '', title = "Farewell")
+    labs(x = '', y = '', title = "Farewell") +
+    theme(legend.position = "none") 
 ```
 
 ```{r}
@@ -689,9 +648,11 @@ slowly.p <- slowly %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = 'Low Average Z-Value', title ="Slowly")
+    labs(x = '', y = 'Low Average Z-Value', title ="Slowly") +
+    theme(legend.position = "none") 
 
 # -----------------
 
@@ -706,9 +667,11 @@ thechain.p <- thechain %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = '', title = 'The Chain')
+    labs(x = '', y = '', title = 'The Chain') +
+    theme(legend.position = "none") 
 
 # -----------------
 
@@ -723,9 +686,11 @@ dontyou.p <- dontyou %>%
             fill = d)) + 
     geom_tile() +
     coord_fixed() +
-    scale_fill_viridis_c(option = 'E', guide = 'none') +
+    # scale_fill_viridis_c(option = 'E', guide = 'none') +
+    scale_fill_distiller(palette = 'BuPu') +
     theme_classic() +
-    labs(x = '', y = '', title = 'Why Dont You')
+    labs(x = '', y = '', title = 'Why Dont You') +
+    theme(legend.position = "none") 
 ```
 
 ```{r}
@@ -741,6 +706,142 @@ In this case, the SSM's plot *timbre* features for all songs, which were normali
 As can be seen from the plots, the atypical songs seem to have more dynamic structures, shown by the complex checkered patterns that characterize these plots. However, the song *the Farewell* is less pronounced in this respect. In contrast, the typical songs overall seem to have fairly repetitive structures, though *Why Don't You* is again an exception to this pattern.
 
 All in all, there seems to be some support for the idea that SN is characterized by repetitive music but this is rather a tendency than a rule as the SSM's show less of a stark difference than might be expected.
+
+### Is SN Characterized by Repetitive Music? Part 2: Tempograms
+
+```{r}
+slowly <- 
+    get_tidy_audio_analysis('5SiPjxWdMUFWoLslvvC5v5') 
+thechain <- 
+    get_tidy_audio_analysis('7IctzNEJucIBzkAWYg6np2')
+dontyou <- 
+    get_tidy_audio_analysis('64ka8E2PpNo4NxSCiRBj1H') 
+lydia <- 
+    get_tidy_audio_analysis('1Fs3DEJsYoT1jsK9sNGRaK') 
+macadam <- 
+    get_tidy_audio_analysis('4QfJ0zWoNdObnOgeacNkPL') 
+
+rainbow <- 
+    get_tidy_audio_analysis('4k2CdsRopiwCKqO6rOSiVY') 
+cherryblossom <- 
+    get_tidy_audio_analysis('3OzFq5rnNeXtu4VCOBPToz') 
+farewell <- 
+    get_tidy_audio_analysis('5iIQrjwy4bo3TfRVbgtl1H')
+contigo <- 
+    get_tidy_audio_analysis('3W3rGvMrat9McSeU5Hf6dZ')
+saints <- 
+    get_tidy_audio_analysis('33ahXRVbidoCGLLiTr3VE1')
+```
+
+```{r}
+rainbowtemp <- rainbow %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+cherrytemp <- cherryblossom %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+farewelltemp <- farewell %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+```
+
+```{r}
+slowlytemp <- slowly %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+chaintemp <- thechain %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+dontyoutemp <- dontyou %>% 
+    tempogram(window_size = 8, hop_size = 1, cyclic = TRUE) %>% 
+    ggplot(aes(x = time, y = bpm, fill = power)) + 
+    geom_raster() + 
+    scale_fill_viridis_c(guide = 'none') +
+    labs(x = 'Time (s)', y = 'Tempo (BPM)') +
+    theme_classic()
+
+slowlytemp <- slowlytemp + labs(title = "Slowly")
+chaintemp <- chaintemp + labs(title = "the Chain")
+dontyoutemp <- dontyoutemp + labs(title = "Why Don't You")
+
+rainbowtemp <- rainbowtemp + labs(title = "the Rainbow")
+cherrytemp <- cherrytemp + labs(title = "Cherry Blossom")
+farewelltemp <- farewelltemp + labs(title = "Farewell")
+```
+
+```{r}
+grid.arrange(slowlytemp, chaintemp, dontyoutemp, rainbowtemp, cherrytemp, farewelltemp, nrow = 2, ncol = 3)
+```
+
+***
+
+The self-similarity matrices resulted in non-conclusive results regarding the idea that SN is characterized by more steady and repetitive music and that more dynamic music is more atypical for the playlist. To chase this idea a little further, we can make the same comparisons but this time using tempograms. These objects plot the development of tempo over time for individual songs. On the left the different tempograms are plotted for the same typical and atypical songs as the previous tab. Unfortunately, these plots don't get us much further. The songs *Why Don't You* and *Farewell* again contradict that typical SN songs are more steady and atypical more steady. However, the remaining fours songs do, yet again, support the idea as the tempograms for the typical songs *the Chain* and *Slowly* show a much more steady line than the atypical songs *the Rainbow* and *Cherry Blossom*. 
+
+### This is Getting Repetitive: Is SN Repetitive or Not?
+
+```{r, fig.width = 9}
+typical <- read.csv('typical.csv')
+atypical <- read.csv('atypical.csv')
+
+atypicalplot <- atypical %>%
+  ggplot( aes(x=power, fill = song)) +
+    geom_density(alpha=0.4) +
+    ylim(0,10) +
+    scale_fill_brewer(palette="Dark2") +
+    theme_minimal() + 
+    coord_flip() +
+    scale_x_reverse() +
+    theme(legend.position= c(0.66,0.25)) +
+    theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+    labs(subtitle = "Atypical SN Songs", fill = "")
+
+typicalplot <- typical %>%
+  ggplot( aes(x=power, fill = song)) +
+    geom_density(alpha=0.4) +
+    scale_fill_brewer(palette="Dark2") +
+    theme_minimal() +
+    coord_flip() +
+    scale_y_reverse() +
+    scale_x_reverse() +
+    theme(legend.position=c(0.27,0.25)) +
+    labs(subtitle = "Typical SN Songs", fill = "")
+```
+
+```{r}
+grid.arrange(typicalplot, atypicalplot, nrow = 1,
+     top = textGrob("Spread of Power Column",gp=gpar(fontsize=16,font=1)))
+```
+
+***
+
+With the very real risk of getting repetitive myself, I want to give the theory that steady music is typical and dynamic music atypical for SN one more shot. The tempograms of the previous slide are plotted on the basis of power distributions over all the possible bpm's at every point in time of a song. When a tempogram shows a clear and steady tempo we can expect the density plot of this power vector to have lower spread than for a tempogram that shows a lot of fluctuation of tempo over time. As such, I've plotted density curves of this power column for 5 typical and atypical songs (selected again on the basis of the same z-values as before). The "butterfly" plot on the left shows the results. Although there are some exceptions, overall it can be seen that the density plots of atypical songs have a wider spread than those of the typical songs, which show more peaked and narrow density distributions. This suggests that, indeed, SN is characterized by music with a more steady flow. 
 
 ### Harmonic Structure: the Remarkable Regularity of our Preferred Chords
 
@@ -765,8 +866,12 @@ chords
 
 *** 
 
-Chromagrams allow us to do more than just detect the structure of songs. We can compare a song's chromagram to templates that describe chords. These templates are made by constructing a vector with 1's at chromas that correspond with the notes in a chord and 0's at all the other chromas. When we compare our chromagram at all points in time with these templates we can calculate distances between them and, in turn, estimate which chord is being played. 
+Okay, back to comparing SN old with SN new. Chromagrams allow us to do more than just detect the structure of songs. We can compare a song's chromagram to templates that describe chords. These templates are made by constructing a vector with 1's at chromas that correspond with the notes in a chord and 0's at all the other chromas. When we compare our chromagram at all points in time with these templates we can calculate distances between them and, in turn, estimate which chord is being played. 
 
-Following this reasoning, we can sum the distances of all the timepoints in each song to estimate which chords are most frequently played over the whole song (low sum values corresponding with more frequent chords). This is exactly what I did for SN old and SN new (using *Euclidean normalization* and *Manhattan distance*). What resulted was a large dataframe that has the songs of each playlist in the rows and all major/minor triads and seventh chords in the columns. The dataframe itself is filled up with summed distances. If we take the mean of each column then we can get an idea of the prevelance of each chord for each playlist. One last thing: in order to meaningfully compare the playlists, I normalized the distances by dividing them with the max value of each playlist. This effectively converts the distances into proportions. 
+Using this technique (and a whole lot of data wrangling) I plotted the average prevalence of common chords in the 100 songs of SN new and SN old. Below this text I added some explanation on how I roughly did this.
 
-Okay, that's a lot of data-talk... But what did I find? This is what's plotted on the left. Something quite remarkable revealed itself: it seems that the distribution of chords has hardly changed at all over time! Additionally to that, it seems that my girlfriend and I prefer more complex (seventh) chords over simple triads, this is shown by the over-representation of seventh chords in the top half of the plot.
+More importantly: what did I find? This is what's plotted on the left. Something quite remarkable revealed itself: it seems that the distribution of chords has hardly changed at all over time! The most common chords in SN old are virtually the same as SN new and the same goes for 'rare' chords within each playlist. This can mean a few things: Savannah and I can implicitly hear which chords are being played in a song and base our song preferences on this intuition subconsciously OR the algorithm used to analyze the chords is biased towards detecting certain chords. I will leave it up to the reader to decide what to believe!
+
+Additionally to that, it seems that my girlfriend and I prefer (seventh) chords over simple triads, this is shown by the over-representation of seventh chords in the top half of the plot.
+
+*Explanation: I summed the distances of all the timepoints in each song to estimate which chords are most frequently played over the whole song (low sum values corresponding with more frequent chords). I did this for each song in SN old and SN new (using Euclidean normalization and Manhattan distance). What resulted was a large dataframe that has the songs of each playlist in the rows and all the common major/minor triads and seventh chords in the columns. The dataframe itself is filled up with summed distances. If we take the mean of each column then we can get an idea of the prevelance of each chord for each playlist. One last thing: in order to meaningfully compare the playlists, I normalized the distances by dividing them with the max value of each playlist. This effectively converts the distances into proportions.*
