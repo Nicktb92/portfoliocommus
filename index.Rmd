@@ -154,9 +154,16 @@ modelplot
 
 To conclude this tour of our playlist and to reach a conclusion whether its style has changed over time, we can try to build a model that attempts to classify songs in SN old or SN new. After all, if a machine is able to 'teach' itself what differentiates old and new tracks in our playlist, then we can add that fact as more evidence that SN's style has changed over time.
 
-Because we're dealing with a binary classification task, I decided to train a penalized logistic regression model. To train the model (with 10 fold cross-fold validation using a 70/30 split, repeated 3 times) I used the `R` package `caret`. Via trial and error I eventually used the following predictors, as these resulted in the best model: energy, instrumentalness, liveness, valence, danceability and track popularity. The resulting model did suprisingly well, reaching an overall accuracy of 0.77 (*Kappa: 0.54*). However, the model was trained on less data than is usually necessary when training machine learning algorithms so these numbers might be a bit unreliable. A confusion matrix is printed at the bottom of this text. 
+Because we're dealing with a binary classification task, I decided to train a penalized logistic regression model. To train the model (with 10 fold cross-fold validation using a 70/30 split, repeated 3 times) I used the `R` package `caret`. Via trial and error I eventually used the following predictors, as these resulted in the best model: energy, instrumentalness, liveness, valence, danceability and track popularity. The resulting model did suprisingly well, reaching an overall accuracy of 0.77 (*Kappa: 0.54*). What shoul be taken into account, however, is that the model was trained on less data than is usually necessary when training machine learning algorithms, meaning these numbers might be a bit unreliable. A confusion matrix is printed at the bottom of this text. 
 
 As another measure of how well the model functions is to look how well it managed to reproduce the means in the data. We can look at the songs that the model predicted to be either SN old or SN new, calculate means for each feature within each group and compare those to the actual means of each feature within SN old and SN new. This is plotted on the left. The model managed to discover the same differences between SN old and new as those discussed in this storyboard: over time, we've moved to happier songs that are more danceable and have higher energy.
+
+| Confusion Matrix |      |           |     |   |
+|------------------|------|-----------|-----|---|
+|                  |      | Predicted |     |   |
+|                  | Real | Old       | New |   |
+|                  | Old  | 25        | 10  |   |
+|                  | New  | 4         | 22  |   |  
 
 ### Music Taste over Time: the Story of a Playlist
 
