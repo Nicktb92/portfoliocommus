@@ -72,99 +72,6 @@ CompMatMeans.graph <- CompMatMeans.graph %>%
     mutate(Feature = featn)
 ```
 
-### (NEW) Can a Computer Differentiate Between Old and New?
-
-```{r}
-SNfull_num <- Filter(is.numeric, SNfull)
-# SNfull_num <- SNfull_num[,-c(18:50)]
-# SNfull_num <- SNfull_num[,-c(18:50)]
-
-NI <- c("mode", "time_signature", "track.duration_ms", "track.track_number", "track.album.total_tracks", "track.disc_number")
-SNfull_num <- select(SNfull_num, -c(NI))
-
-# Make group column 
-SNfull_num <- mutate(SNfull_num, group = 1)
-SNfull_num[309:409,"group"] <- 2
-SNfull_num <- SNfull_num[c(1:100, 309:409),]
-SNfull_num[,11] <- (SNfull_num[,11] - min(SNfull_num[,11])) / (max(SNfull_num[,11]) - min(SNfull_num[,11]))
-
-# Make train and test set
-index <- sample(nrow(SNfull_num), 0.70 * nrow(SNfull_num))
-SNfull_train <- SNfull_num[index,]
-SNfull_test <- SNfull_num[-index,]
-```
-
-```{r}
-# Normalize track.popularity
-train.control <- trainControl(method = "repeatedcv",
-                              number = 10,
-                              repeats = 3,
-                              search = "random")
-
-model_caret   <- train(factor(group) ~ energy + instrumentalness + liveness + valence + danceability + track.popularity, 
-                  data = SNfull_train,
-                  method = "plr", metric = "Accuracy",
-                  trControl = train.control)
-
-predictions <- predict(model_caret, newdata = SNfull_test)
-
-confusion <- confusionMatrix(predictions, factor(SNfull_test$group))
-
-```
-
-```{r}
-SNfull_test <- mutate(SNfull_test, prediction = predictions)
-
-real <- aggregate(SNfull_num, list(SNfull_num$group), mean)
-modelpred <- aggregate(SNfull_test, list(SNfull_test$prediction), mean)
-
-select <- c("Group.1", "energy", "instrumentalness", "liveness", "valence", "danceability", "track.popularity")
-
-real <- real[, select]
-modelpred <- modelpred[, select]
-
-real <- mutate(real, type = "actual")
-modelpred <- mutate(modelpred, type = "model")
-
-realmod <- rbind(real, modelpred)
-
-realmod <- melt(realmod, id.vars = c("Group.1", "type"))
-realmod$Group.1 <- factor(realmod$Group.1)
-levels(realmod$Group.1) <- c("SN old", "SN new")
-
-# reallong <- melt(real, id.vars = c("Group.1"))
-# modellong <- melt(modelpred, id.vars = "Group.1")
-
-modelplot <- ggplot(realmod, aes(x = variable, y = value, fill = factor(type))) +
-  geom_bar(stat="identity", position = position_dodge(width = 0.5)) +
-  facet_wrap(~ Group.1) +
-  labs(title = "Model Evaluation", subtitle = "How well did the model reproduce the actual mean values?", fill = "Means") +
-  xlab("") +
-  ylab("value") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle=45, hjust = 1)) +
-  ylim(0,1) +
-  # scale_fill_viridis_c(option = 'E', guide = 'none') +
-  scale_fill_brewer(palette = 'BuPu') 
-
-modelplot
-```
-
-***
-
-To conclude this tour of our playlist and to reach a conclusion whether its style has changed over time, we can try to build a model that attempts to classify songs in SN old or SN new. After all, if a machine is able to 'teach' itself what differentiates old and new tracks in our playlist, then we can add that fact as more evidence that SN's style has changed over time.
-
-Because we're dealing with a binary classification task, I decided to train a penalized logistic regression model. To train the model (with 10 fold cross-fold validation using a 70/30 split, repeated 3 times) I used the `R` package `caret`. Via trial and error I eventually used the following predictors, as these resulted in the best model: energy, instrumentalness, liveness, valence, danceability and track popularity. The resulting model did suprisingly well, reaching an overall accuracy of 0.77 (*Kappa: 0.54*). What shoul be taken into account, however, is that the model was trained on less data than is usually necessary when training machine learning algorithms, meaning these numbers might be a bit unreliable. A confusion matrix is printed at the bottom of this text. 
-
-As another measure of how well the model functions is to look how well it managed to reproduce the means in the data. We can look at the songs that the model predicted to be either SN old or SN new, calculate means for each feature within each group and compare those to the actual means of each feature within SN old and SN new. This is plotted on the left. The model managed to discover the same differences between SN old and new as those discussed in this storyboard: over time, we've moved to happier songs that are more danceable and have higher energy.
-
-| Confusion Matrix |      |           |     |   |
-|------------------|------|-----------|-----|---|
-|                  |      | Predicted |     |   |
-|                  | Real | Old       | New |   |
-|                  | Old  | 25        | 10  |   |
-|                  | New  | 4         | 22  |   |  
-
 ### Music Taste over Time: the Story of a Playlist
 
 ```{r}
@@ -203,7 +110,7 @@ This portfolio tells the story of what I've found.
 
 First, we need to be able to compare the old with the new. As such, I've split up SN into two parts: the first 100 songs added to the playlist (SN old) and the latest 100 additions (SN new). The graph on the left shows if there are meaningful differences between the means of a selection of Spotify audio features of SN old and SN new. Red lines indicate strong effects (> 0.5 standard deviations of change) whereas orange lines indicate medium effects (> 0.2 - < 0.5 standard deviations of change).
 
-The graph seems to show that our music taste has become happier over time: danceability has gone up and valence has experienced a sharp rise. Only looking at a difference in means, however, tells us nothing of how the distributions of these features have evolved over time...
+The graph seems to show that our music taste has become happier over time: danceability has gone up and valence has experienced a sharp rise. Only looking at a difference in means, however, doesn't tell us how the distributions of these features have evolved over time...
 
 ### Happier Songs Over Time: The Great Migration of the Density Blob
 
@@ -712,7 +619,7 @@ In this case, the SSM's plot *timbre* features for all songs, which were normali
 
 As can be seen from the plots, the atypical songs seem to have more dynamic structures, shown by the complex checkered patterns that characterize these plots. However, the song *the Farewell* is less pronounced in this respect. In contrast, the typical songs overall seem to have fairly repetitive structures, though *Why Don't You* is again an exception to this pattern.
 
-All in all, there seems to be some support for the idea that SN is characterized by repetitive music but this is rather a tendency than a rule as the SSM's show less of a stark difference than might be expected.
+All in all, there seems to be some support for the idea that SN is characterized by repetitive music but this is rather a tendency than a rule as the SSM's show less of a stark difference than might be expected. 
 
 ### Is SN Characterized by Repetitive Music? Part 2: Tempograms
 
@@ -848,7 +755,7 @@ grid.arrange(typicalplot, atypicalplot, nrow = 1,
 
 ***
 
-With the very real risk of getting repetitive myself, I want to give the theory that steady music is typical and dynamic music atypical for SN one more shot. The tempograms of the previous slide are plotted on the basis of power distributions over all the possible bpm's at every point in time of a song. When a tempogram shows a clear and steady tempo we can expect the density plot of this power vector to have lower spread than for a tempogram that shows a lot of fluctuation of tempo over time. As such, I've plotted density curves of this power column for 5 typical and atypical songs (selected again on the basis of the same z-values as before). The "butterfly" plot on the left shows the results. Although there are some exceptions, overall it can be seen that the density plots of atypical songs have a wider spread than those of the typical songs, which show more peaked and narrow density distributions. This suggests that, indeed, SN is characterized by music with a more steady flow. 
+With the very real risk of getting repetitive myself, I want to give the theory that steady music is typical and dynamic music atypical for SN one more shot. The tempograms of the previous slide are plotted on the basis of power distributions over all the possible bpm's at every point in time of a song. When a tempogram shows a clear and steady tempo we can expect the density plot of this power vector to have lower spread than for a tempogram that shows a lot of fluctuation of tempo over time. As such, I've plotted density curves of this power column for 5 typical and atypical songs (selected again on the basis of the same z-values as before). The "butterfly" plot on the left shows the results. Although there are some exceptions, overall it can be seen that the density plots of atypical songs have a wider spread than those of the typical songs, which show more peaked and narrow density distributions. This suggests that, indeed, SN is characterized by music with a more steady flow. However, in order to truly answer this question, I would have to analyze many more songs and I would need to include many more features in the analysis. Due to a lack of time, I could not go that far into the corpus for this portfolio.
 
 ### Harmonic Structure: the Remarkable Regularity of our Preferred Chords
 
@@ -882,3 +789,96 @@ More importantly: what did I find? This is what's plotted on the left. Something
 Additionally to that, it seems that my girlfriend and I prefer (seventh) chords over simple triads, this is shown by the over-representation of seventh chords in the top half of the plot.
 
 *Explanation: I summed the distances of all the timepoints in each song to estimate which chords are most frequently played over the whole song (low sum values corresponding with more frequent chords). I did this for each song in SN old and SN new (using Euclidean normalization and Manhattan distance). What resulted was a large dataframe that has the songs of each playlist in the rows and all the common major/minor triads and seventh chords in the columns. The dataframe itself is filled up with summed distances. If we take the mean of each column then we can get an idea of the prevelance of each chord for each playlist. One last thing: in order to meaningfully compare the playlists, I normalized the distances by dividing them with the max value of each playlist. This effectively converts the distances into proportions.*
+
+### Can a Computer Differentiate Between Old and New?
+
+```{r}
+SNfull_num <- Filter(is.numeric, SNfull)
+# SNfull_num <- SNfull_num[,-c(18:50)]
+# SNfull_num <- SNfull_num[,-c(18:50)]
+
+NI <- c("mode", "time_signature", "track.duration_ms", "track.track_number", "track.album.total_tracks", "track.disc_number")
+SNfull_num <- select(SNfull_num, -c(NI))
+
+# Make group column 
+SNfull_num <- mutate(SNfull_num, group = 1)
+SNfull_num[309:409,"group"] <- 2
+SNfull_num <- SNfull_num[c(1:100, 309:409),]
+SNfull_num[,11] <- (SNfull_num[,11] - min(SNfull_num[,11])) / (max(SNfull_num[,11]) - min(SNfull_num[,11]))
+
+# Make train and test set
+index <- sample(nrow(SNfull_num), 0.70 * nrow(SNfull_num))
+SNfull_train <- SNfull_num[index,]
+SNfull_test <- SNfull_num[-index,]
+```
+
+```{r}
+# Normalize track.popularity
+train.control <- trainControl(method = "repeatedcv",
+                              number = 10,
+                              repeats = 3,
+                              search = "random")
+
+model_caret   <- train(factor(group) ~ energy + instrumentalness + liveness + valence + danceability + track.popularity, 
+                  data = SNfull_train,
+                  method = "plr", metric = "Accuracy",
+                  trControl = train.control)
+
+predictions <- predict(model_caret, newdata = SNfull_test)
+
+confusion <- confusionMatrix(predictions, factor(SNfull_test$group))
+
+```
+
+```{r}
+SNfull_test <- mutate(SNfull_test, prediction = predictions)
+
+real <- aggregate(SNfull_num, list(SNfull_num$group), mean)
+modelpred <- aggregate(SNfull_test, list(SNfull_test$prediction), mean)
+
+select <- c("Group.1", "energy", "instrumentalness", "liveness", "valence", "danceability", "track.popularity")
+
+real <- real[, select]
+modelpred <- modelpred[, select]
+
+real <- mutate(real, type = "actual")
+modelpred <- mutate(modelpred, type = "model")
+
+realmod <- rbind(real, modelpred)
+
+realmod <- melt(realmod, id.vars = c("Group.1", "type"))
+realmod$Group.1 <- factor(realmod$Group.1)
+levels(realmod$Group.1) <- c("SN old", "SN new")
+
+# reallong <- melt(real, id.vars = c("Group.1"))
+# modellong <- melt(modelpred, id.vars = "Group.1")
+
+modelplot <- ggplot(realmod, aes(x = variable, y = value, fill = factor(type))) +
+  geom_bar(stat="identity", position = position_dodge(width = 0.5)) +
+  facet_wrap(~ Group.1) +
+  labs(title = "Model Evaluation", subtitle = "How well did the model reproduce the actual mean values?", fill = "Means") +
+  xlab("") +
+  ylab("value") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust = 1)) +
+  ylim(0,1) +
+  # scale_fill_viridis_c(option = 'E', guide = 'none') +
+  scale_fill_brewer(palette = 'BuPu') 
+
+modelplot
+```
+
+***
+
+To conclude this tour of our playlist and to reach a conclusion whether its style has changed over time, we can try to build a model that attempts to classify songs in SN old or SN new. After all, if a machine is able to 'teach' itself what differentiates old and new tracks in our playlist, then we can add that fact as more evidence that SN's style has changed over time.
+
+Because we're dealing with a binary classification task, I decided to train a penalized logistic regression model. To train the model (with 10 fold cross-fold validation using a 70/30 split, repeated 3 times) I used the `R` package `caret`. Via trial and error I eventually used the following predictors, as these resulted in the best model: energy, instrumentalness, liveness, valence, danceability and track popularity. The resulting model did suprisingly well, reaching an overall accuracy of 0.77 (*Kappa: 0.54*). What shoul be taken into account, however, is that the model was trained on less data than is usually necessary when training machine learning algorithms, meaning these numbers might be a bit unreliable. A confusion matrix is printed at the bottom of this text. 
+
+As another measure of how well the model functions is to look how well it managed to reproduce the means in the data. We can look at the songs that the model predicted to be either SN old or SN new, calculate means for each feature within each group and compare those to the actual means of each feature within SN old and SN new. This is plotted on the left. The model managed to discover the same differences between SN old and new as those discussed in this storyboard: over time, we've moved to happier songs that are more danceable and have higher energy.
+
+| Confusion Matrix |      |           |     |   |
+|------------------|------|-----------|-----|---|
+|       | Predicted |     |   |    |
+| Real | Old       | New |   |     |
+| Old  | 25        | 10  |   |     |
+|New  | 4         | 22  |   |      |
