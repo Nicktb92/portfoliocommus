@@ -793,6 +793,8 @@ Additionally to that, it seems that my girlfriend and I prefer (seventh) chords 
 ### Can a Computer Differentiate Between Old and New?
 
 ```{r}
+SNfull <- get_playlist_audio_features('Nick ten Broeke', '0kxICQprxDTMdxMXdgBjZN')
+
 SNfull_num <- Filter(is.numeric, SNfull)
 # SNfull_num <- SNfull_num[,-c(18:50)]
 # SNfull_num <- SNfull_num[,-c(18:50)]
@@ -881,4 +883,4 @@ As another measure of how well the model functions is to look how well it manage
 |       | Predicted |     |   |    |
 | Real | Old       | New |   |     |
 | Old  | 25        | 10  |   |     |
-|New  | 4         | 22  |   |      |
+| New  | 4         | 22  |   |      |
